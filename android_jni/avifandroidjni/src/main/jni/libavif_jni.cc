@@ -279,11 +279,11 @@ FUNC(jboolean, getInfo, jbyteArray byte_array, jobject info) {
     GET_FIELD_ID(height, info_class, "height", "I", false);
     GET_FIELD_ID(depth, info_class, "depth", "I", false);
     GET_FIELD_ID(alpha_present, info_class, "alphaPresent", "Z", false);
-    env->SetIntField(info, width, decoder.crop.width);
+    env->SetIntField(info, width, (jint) decoder.crop.width);
     CHECK_EXCEPTION(false);
-    env->SetIntField(info, height, decoder.crop.height);
+    env->SetIntField(info, height, (jint) decoder.crop.height);
     CHECK_EXCEPTION(false);
-    env->SetIntField(info, depth, decoder.decoder->image->depth);
+    env->SetIntField(info, depth, (jint) decoder.decoder->image->depth);
     CHECK_EXCEPTION(false);
     env->SetBooleanField(info, alpha_present, decoder.decoder->alphaPresent);
     CHECK_EXCEPTION(false);
@@ -337,11 +337,11 @@ FUNC(jlong, createDecoder, jbyteArray byte_array, jint threads) {
                  0);
     GET_FIELD_ID(frame_durations_id, avif_decoder_class, "frameDurations", "[D",
                  0);
-    env->SetIntField(thiz, width_id, decoder->crop.width);
+    env->SetIntField(thiz, width_id, (jint) decoder->crop.width);
     CHECK_EXCEPTION(0);
-    env->SetIntField(thiz, height_id, decoder->crop.height);
+    env->SetIntField(thiz, height_id, (jint) decoder->crop.height);
     CHECK_EXCEPTION(0);
-    env->SetIntField(thiz, depth_id, decoder->decoder->image->depth);
+    env->SetIntField(thiz, depth_id, (jint) decoder->decoder->image->depth);
     CHECK_EXCEPTION(0);
     env->SetBooleanField(thiz, alpha_present_id, decoder->decoder->alphaPresent);
     CHECK_EXCEPTION(0);
