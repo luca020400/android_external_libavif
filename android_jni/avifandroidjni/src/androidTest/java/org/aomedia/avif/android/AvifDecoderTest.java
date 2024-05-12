@@ -17,8 +17,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,14 +85,11 @@ public class AvifDecoderTest {
             this.isAnimated = frameCount > 1;
         }
 
-        public ByteBuffer getBuffer() throws IOException {
+        public byte[] getBuffer() throws IOException {
             Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
             String assetPath = Paths.get(directory, filename).toString();
             InputStream is = context.getAssets().open(assetPath);
-            ByteBuffer buffer = ByteBuffer.allocateDirect(is.available());
-            Channels.newChannel(is).read(buffer);
-            buffer.rewind();
-            return buffer;
+            return is.readAllBytes();
         }
     }
 
@@ -152,18 +147,18 @@ public class AvifDecoderTest {
         if (image.isAnimated) {
             return;
         }
-        ByteBuffer buffer = image.getBuffer();
+        byte[] buffer = image.getBuffer();
         assertThat(buffer).isNotNull();
         assertThat(AvifDecoder.isAvifImage(buffer)).isTrue();
         Info info = new Info();
-        assertThat(AvifDecoder.getInfo(buffer, buffer.remaining(), info)).isTrue();
+        assertThat(AvifDecoder.getInfo(buffer, info)).isTrue();
         assertThat(info.width).isEqualTo(image.width);
         assertThat(info.height).isEqualTo(image.height);
         assertThat(info.depth).isEqualTo(image.depth);
         assertThat(info.alphaPresent).isEqualTo(image.alphaPresent);
         Bitmap bitmap = Bitmap.createBitmap(info.width, info.height, config);
         assertThat(bitmap).isNotNull();
-        assertThat(AvifDecoder.decode(buffer, buffer.remaining(), bitmap)).isTrue();
+        assertThat(AvifDecoder.decode(buffer, bitmap)).isTrue();
 
         // Test scaling. These tests can be a bit slow on emulators, so only run them when config is
         // ARGB_8888.
@@ -174,17 +169,17 @@ public class AvifDecoderTest {
                         Bitmap.createBitmap(
                                 (int) (info.width * scaleFactor), (int) (info.height * scaleFactor), config);
                 assertThat(bitmap).isNotNull();
-                assertThat(AvifDecoder.decode(buffer, buffer.remaining(), bitmap)).isTrue();
+                assertThat(AvifDecoder.decode(buffer, bitmap)).isTrue();
 
                 // Scale width only.
                 bitmap = Bitmap.createBitmap((int) (info.width * scaleFactor), info.height, config);
                 assertThat(bitmap).isNotNull();
-                assertThat(AvifDecoder.decode(buffer, buffer.remaining(), bitmap)).isTrue();
+                assertThat(AvifDecoder.decode(buffer, bitmap)).isTrue();
 
                 // Scale height only.
                 bitmap = Bitmap.createBitmap(info.width, (int) (info.height * scaleFactor), config);
                 assertThat(bitmap).isNotNull();
-                assertThat(AvifDecoder.decode(buffer, buffer.remaining(), bitmap)).isTrue();
+                assertThat(AvifDecoder.decode(buffer, bitmap)).isTrue();
             }
         }
     }
@@ -192,7 +187,7 @@ public class AvifDecoderTest {
     // Tests AvifDecoder by using it as a regular instantiated class.
     @Test
     public void testDecodeRegularClass() throws IOException {
-        ByteBuffer buffer = image.getBuffer();
+        byte[] buffer = image.getBuffer();
         assertThat(buffer).isNotNull();
         AvifDecoder decoder = AvifDecoder.create(buffer, image.threads);
         assertThat(decoder).isNotNull();

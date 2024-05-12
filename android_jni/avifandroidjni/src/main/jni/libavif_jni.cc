@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <memory>
 #include <new>
+#include <vector>
 
 #include "avif/avif.h"
 
@@ -238,11 +239,13 @@ jint JNI_OnLoad(JavaVM *vm, void * /*reserved*/) {
     return JNI_VERSION_1_6;
 }
 
-FUNC(jboolean, isAvifImage, jobject encoded, int length) {
+FUNC(jboolean, isAvifImage, jbyteArray byte_array) {
     IGNORE_UNUSED_JNI_PARAMETERS;
-    const uint8_t *const buffer =
-            static_cast<const uint8_t *>(env->GetDirectBufferAddress(encoded));
-    const avifROData avif = {buffer, static_cast<size_t>(length)};
+    const auto arrayLength = env->GetArrayLength(byte_array);
+    std::vector<uint8_t> buffer(arrayLength);
+    env->GetByteArrayRegion(byte_array, 0, arrayLength,
+                            reinterpret_cast<jbyte *>(buffer.data()));
+    const avifROData avif = {buffer.data(), static_cast<size_t>(arrayLength)};
     return avifPeekCompatibleFileType(&avif);
 }
 
@@ -261,12 +264,14 @@ FUNC(jboolean, isAvifImage, jobject encoded, int length) {
   CHECK_EXCEPTION(ret);                                                    \
   if (var == nullptr) return ret
 
-FUNC(jboolean, getInfo, jobject encoded, int length, jobject info) {
+FUNC(jboolean, getInfo, jbyteArray byte_array, jobject info) {
     IGNORE_UNUSED_JNI_PARAMETERS;
-    const uint8_t *const buffer =
-            static_cast<const uint8_t *>(env->GetDirectBufferAddress(encoded));
+    const auto arrayLength = env->GetArrayLength(byte_array);
+    std::vector<uint8_t> buffer(arrayLength);
+    env->GetByteArrayRegion(byte_array, 0, arrayLength,
+                            reinterpret_cast<jbyte *>(buffer.data()));
     AvifDecoderWrapper decoder;
-    if (!CreateDecoderAndParse(&decoder, buffer, length, /*threads=*/1)) {
+    if (!CreateDecoderAndParse(&decoder, buffer.data(), arrayLength, /*threads=*/1)) {
         return false;
     }
     FIND_CLASS(info_class, "org/aomedia/avif/android/AvifDecoder$Info", false);
@@ -285,36 +290,40 @@ FUNC(jboolean, getInfo, jobject encoded, int length, jobject info) {
     return true;
 }
 
-FUNC(jboolean, decode, jobject encoded, int length, jobject bitmap,
+FUNC(jboolean, decode, jbyteArray byte_array, jobject bitmap,
      jint threads) {
     IGNORE_UNUSED_JNI_PARAMETERS;
     if (threads < 0) {
         LOGE("Invalid value for threads (%d).", threads);
         return false;
     }
-    const uint8_t *const buffer =
-            static_cast<const uint8_t *>(env->GetDirectBufferAddress(encoded));
+    const auto arrayLength = env->GetArrayLength(byte_array);
+    std::vector<uint8_t> buffer(arrayLength);
+    env->GetByteArrayRegion(byte_array, 0, arrayLength,
+                            reinterpret_cast<jbyte *>(buffer.data()));
     AvifDecoderWrapper decoder;
-    if (!CreateDecoderAndParse(&decoder, buffer, length,
+    if (!CreateDecoderAndParse(&decoder, buffer.data(), arrayLength,
                                getThreadCount(threads))) {
         return false;
     }
     return DecodeNextImage(env, &decoder, bitmap) == AVIF_RESULT_OK;
 }
 
-FUNC(jlong, createDecoder, jobject encoded, jint length, jint threads) {
+FUNC(jlong, createDecoder, jbyteArray byte_array, jint threads) {
     if (threads < 0) {
         LOGE("Invalid value for threads (%d).", threads);
         return 0;
     }
-    const uint8_t *const buffer =
-            static_cast<const uint8_t *>(env->GetDirectBufferAddress(encoded));
+    const auto arrayLength = env->GetArrayLength(byte_array);
+    std::vector<uint8_t> buffer(arrayLength);
+    env->GetByteArrayRegion(byte_array, 0, arrayLength,
+                            reinterpret_cast<jbyte *>(buffer.data()));
     std::unique_ptr<AvifDecoderWrapper> decoder(new(std::nothrow)
                                                         AvifDecoderWrapper());
     if (decoder == nullptr) {
         return 0;
     }
-    if (!CreateDecoderAndParse(decoder.get(), buffer, length,
+    if (!CreateDecoderAndParse(decoder.get(), buffer.data(), arrayLength,
                                getThreadCount(threads))) {
         return 0;
     }

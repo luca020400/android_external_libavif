@@ -7,8 +7,6 @@ import android.graphics.Bitmap;
 
 import androidx.annotation.Nullable;
 
-import java.nio.ByteBuffer;
-
 /**
  * An AVIF Decoder. AVIF Specification: https://aomediacodec.github.io/av1-avif/.
  *
@@ -55,8 +53,8 @@ public class AvifDecoder {
     private int repetitionCount;
     private double[] frameDurations;
 
-    private AvifDecoder(ByteBuffer encoded, int threads) {
-        decoder = createDecoder(encoded, encoded.remaining(), threads);
+    private AvifDecoder(byte[] buffer, int threads) {
+        decoder = createDecoder(buffer, threads);
     }
 
     /**
@@ -72,45 +70,38 @@ public class AvifDecoder {
     /**
      * Returns true if the bytes in the buffer seem like an AVIF image.
      *
-     * @param buffer The encoded image. buffer.position() must be 0.
+     * @param buffer The encoded image.
      * @return true if the bytes seem like an AVIF image, false otherwise.
      */
-    public static boolean isAvifImage(ByteBuffer buffer) {
-        return AvifDecoder.isAvifImage(buffer, buffer.remaining());
-    }
-
-    private static native boolean isAvifImage(ByteBuffer encoded, int length);
+    public static native boolean isAvifImage(byte[] buffer);
 
     /**
      * Parses the AVIF header and populates the Info.
      *
-     * @param encoded The encoded AVIF image. encoded.position() must be 0.
-     * @param length  Length of the encoded buffer.
-     * @param info    Output parameter whose fields will be populated.
+     * @param buffer The encoded AVIF image.
+     * @param info   Output parameter whose fields will be populated.
      * @return true on success and false on failure.
      */
-    public static native boolean getInfo(ByteBuffer encoded, int length, Info info);
+    public static native boolean getInfo(byte[] buffer, Info info);
 
     /**
      * Decodes the AVIF image into the bitmap.
      *
-     * @param encoded The encoded AVIF image. encoded.position() must be 0.
-     * @param length  Length of the encoded buffer.
+     * @param buffer  The encoded AVIF image.
      * @param bitmap  The decoded pixels will be copied into the bitmap.
      *                If the bitmap dimensions do not match the decoded image's dimensions,
      *                then the decoded image will be scaled to match the bitmap's dimensions.
      * @return true on success and false on failure. A few possible reasons for failure are: 1) Input
      * was not valid AVIF.
      */
-    public static boolean decode(ByteBuffer encoded, int length, Bitmap bitmap) {
-        return decode(encoded, length, bitmap, 0);
+    public static boolean decode(byte[] buffer, Bitmap bitmap) {
+        return decode(buffer, bitmap, 0);
     }
 
     /**
      * Decodes the AVIF image into the bitmap.
      *
-     * @param encoded The encoded AVIF image. encoded.position() must be 0.
-     * @param length  Length of the encoded buffer.
+     * @param buffer  The encoded AVIF image.
      * @param bitmap  The decoded pixels will be copied into the bitmap.
      *                If the bitmap dimensions do not match the decoded image's dimensions,
      *                then the decoded image will be scaled to match the bitmap's dimensions.
@@ -121,7 +112,7 @@ public class AvifDecoder {
      * @return true on success and false on failure. A few possible reasons for failure are: 1) Input
      * was not valid AVIF. 2) Negative value was passed for the threads parameter.
      */
-    public static native boolean decode(ByteBuffer encoded, int length, Bitmap bitmap, int threads);
+    public static native boolean decode(byte[] buffer, Bitmap bitmap, int threads);
 
     /**
      * Get the width of the image.
@@ -186,20 +177,18 @@ public class AvifDecoder {
     /**
      * Create and return an AvifDecoder.
      *
-     * @param encoded The encoded AVIF image. encoded.position() must be 0. The memory of this
-     *                ByteBuffer must be kept alive until release() is called.
+     * @param buffer The encoded AVIF image.
      * @return null on failure. AvifDecoder object on success.
      */
     @Nullable
-    public static AvifDecoder create(ByteBuffer encoded) {
-        return create(encoded, /* threads= */ 1);
+    public static AvifDecoder create(byte[] buffer) {
+        return create(buffer, /* threads= */ 1);
     }
 
     /**
      * Create and return an AvifDecoder with the specified number of threads.
      *
-     * @param encoded The encoded AVIF image. encoded.position() must be 0. The memory of this
-     *                ByteBuffer must be kept alive until release() is called.
+     * @param buffer  The encoded AVIF image. encoded.position() must be 0.
      * @param threads Number of threads to be used by the decoder. Zero means use number of CPU cores
      *                as the thread count. Negative values are invalid. When this value is > 0, it is simply
      *                mapped to the maxThreads parameter in libavif. For more details, see the documentation for
@@ -207,8 +196,8 @@ public class AvifDecoder {
      * @return null on failure. AvifDecoder object on success.
      */
     @Nullable
-    public static AvifDecoder create(ByteBuffer encoded, int threads) {
-        AvifDecoder decoder = new AvifDecoder(encoded, threads);
+    public static AvifDecoder create(byte[] buffer, int threads) {
+        AvifDecoder decoder = new AvifDecoder(buffer, threads);
         return (decoder.decoder == 0) ? null : decoder;
     }
 
@@ -272,7 +261,7 @@ public class AvifDecoder {
      */
     public static native String versionString();
 
-    private native long createDecoder(ByteBuffer encoded, int length, int threads);
+    private native long createDecoder(byte[] buffer, int threads);
 
     private native void destroyDecoder(long decoder);
 }
