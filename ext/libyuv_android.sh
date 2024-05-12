@@ -13,7 +13,9 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-git clone --single-branch https://chromium.googlesource.com/libyuv/libyuv
+if [ ! -d libyuv ]; then
+    git clone --single-branch https://chromium.googlesource.com/libyuv/libyuv
+fi
 
 cd libyuv
 : # When changing the commit below to a newer version of libyuv, it is best to make sure it is being used by chromium,
@@ -21,11 +23,13 @@ cd libyuv
 : # It can be looked up at https://source.chromium.org/chromium/chromium/src/+/main:DEPS?q=libyuv.
 git checkout 464c51a0
 
+rm -rf build
 mkdir build
 cd build
 
 ABI_LIST="armeabi-v7a arm64-v8a x86 x86_64"
 for abi in ${ABI_LIST}; do
+  rm -rf "${abi}"
   mkdir "${abi}"
   cd "${abi}"
   cmake ../.. \

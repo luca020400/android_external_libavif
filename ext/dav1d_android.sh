@@ -15,8 +15,11 @@ if [ $# -ne 1 ]; then
   echo "Usage: ${0} <path_to_android_ndk>"
   exit 1
 fi
-git clone -b 1.4.1 --depth 1 https://code.videolan.org/videolan/dav1d.git
+if [ ! -d dav1d ]; then
+    git clone -b 1.4.1 --depth 1 https://code.videolan.org/videolan/dav1d.git
+fi
 cd dav1d
+rm -rf build
 mkdir build
 cd build
 
@@ -32,6 +35,7 @@ ABI_LIST=("armeabi-v7a" "arm64-v8a" "x86" "x86_64")
 ARCH_LIST=("arm" "aarch64" "x86" "x86_64")
 for i in "${!ABI_LIST[@]}"; do
   abi="${ABI_LIST[i]}"
+  rm -rf "${abi}"
   mkdir "${abi}"
   cd "${abi}"
   PATH=$PATH:${android_bin} meson setup --default-library=static --buildtype release \
