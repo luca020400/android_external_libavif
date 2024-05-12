@@ -38,6 +38,7 @@ for i in "${!ABI_LIST[@]}"; do
   rm -rf "${abi}"
   mkdir "${abi}"
   cd "${abi}"
+  sed -i "s/[0-9]\{2\}-clang/30-clang/g" "../../package/crossfiles/${ARCH_LIST[i]}-android.meson"
   PATH=$PATH:${android_bin} meson setup --default-library=static --buildtype release \
     --cross-file="../../package/crossfiles/${ARCH_LIST[i]}-android.meson" \
     -Denable_tools=false -Denable_tests=false ../..
